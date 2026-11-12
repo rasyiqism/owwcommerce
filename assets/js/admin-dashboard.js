@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
     // 2. Fetch Sales Chart Data
-    fetch(`${owwcSettings.restUrl}owwc/v1/analytics/sales?days=7`, {
+    fetch(window.owwcBuildRestUrl('owwc/v1/analytics/sales', { days: 7 }), {
         headers: { 'X-WP-Nonce': owwcSettings.nonce }
     })
         .then(res => res.json())

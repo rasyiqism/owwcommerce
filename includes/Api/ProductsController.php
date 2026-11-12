@@ -1,7 +1,6 @@
 <?php
 namespace OwwCommerce\Api;
 
-use WP_REST_Controller;
 use WP_REST_Server;
 use WP_Error;
 use WP_REST_Request;
@@ -10,7 +9,7 @@ use OwwCommerce\Core\Container;
 use OwwCommerce\Repositories\ProductRepository;
 use OwwCommerce\Models\Product;
 
-class ProductsController extends WP_REST_Controller {
+class ProductsController extends BaseController {
 
     private ProductRepository $repository;
 
@@ -100,19 +99,19 @@ class ProductsController extends WP_REST_Controller {
     }
 
     public function get_items_permissions_check( $request ) {
-        return current_user_can( 'manage_options' );
+        return $this->admin_permission_check();
     }
 
     public function create_item_permissions_check( $request ) {
-        return current_user_can( 'manage_options' );
+        return $this->admin_permission_check();
     }
 
     public function update_item_permissions_check( $request ) {
-        return current_user_can( 'manage_options' );
+        return $this->admin_permission_check();
     }
 
     public function delete_item_permissions_check( $request ) {
-        return current_user_can( 'manage_options' );
+        return $this->admin_permission_check();
     }
 
     public function get_public_items( $request ) {
@@ -207,6 +206,7 @@ class ProductsController extends WP_REST_Controller {
                 'sale_price'  => isset( $data['sale_price'] ) && $data['sale_price'] !== '' ? floatval( $data['sale_price'] ) : null,
                 'sku'         => sanitize_text_field( $data['sku'] ?? '' ),
                 'stock_qty'   => max( 0, intval( $data['stock_qty'] ?? 0 ) ),
+                'image_id'    => ( ! empty( $data['image_id'] ) && intval( $data['image_id'] ) > 0 ) ? intval( $data['image_id'] ) : null,
                 'image_url'   => esc_url_raw( $data['image_url'] ?? '' ) ?: null,
                 'gallery_ids' => isset( $data['gallery_ids'] ) ? array_map( 'intval', (array) $data['gallery_ids'] ) : [],
                 'created_by'  => (int) get_current_user_id(),
@@ -255,7 +255,17 @@ class ProductsController extends WP_REST_Controller {
             if ( isset( $data['sale_price'] ) )  $product->sale_price  = ( $data['sale_price'] !== '' ) ? floatval( $data['sale_price'] ) : null;
             if ( isset( $data['sku'] ) )         $product->sku         = sanitize_text_field( $data['sku'] );
             if ( isset( $data['stock_qty'] ) )   $product->stock_qty   = max( 0, intval( $data['stock_qty'] ) );
-            if ( isset( $data['image_url'] ) )   $product->image_url   = esc_url_raw( $data['image_url'] ) ?: null;
+            if ( ! empty( $data['image_removed'] ) ) {
+                $product->image_id  = null;
+                $product->image_url = null;
+            } else {
+                if ( ! empty( $data['image_id'] ) && intval( $data['image_id'] ) > 0 ) {
+                    $product->image_id = intval( $data['image_id'] );
+                }
+                if ( ! empty( $data['image_url'] ) ) {
+                    $product->image_url = esc_url_raw( $data['image_url'] );
+                }
+            }
             if ( isset( $data['gallery_ids'] ) ) $product->gallery_ids = array_map( 'intval', (array) $data['gallery_ids'] );
             if ( isset( $data['upsell_ids'] ) )  $product->upsell_ids  = sanitize_text_field( $data['upsell_ids'] ) ?: null;
             if ( isset( $data['cross_sell_ids'] ) ) $product->cross_sell_ids = sanitize_text_field( $data['cross_sell_ids'] ) ?: null;

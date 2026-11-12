@@ -1,7 +1,6 @@
 <?php
 namespace OwwCommerce\Api;
 
-use WP_REST_Controller;
 use WP_REST_Server;
 use OwwCommerce\Core\Container;
 use OwwCommerce\Repositories\OrderRepository;
@@ -11,7 +10,7 @@ use OwwCommerce\Repositories\ProductRepository;
  * Class AnalyticsController
  * REST API untuk data analitik dashboard admin.
  */
-class AnalyticsController extends WP_REST_Controller {
+class AnalyticsController extends BaseController {
 
     private OrderRepository $order_repo;
     private ProductRepository $product_repo;
@@ -30,7 +29,7 @@ class AnalyticsController extends WP_REST_Controller {
             [
                 'methods'             => WP_REST_Server::READABLE,
                 'callback'            => [ $this, 'get_summary' ],
-                'permission_callback' => [ $this, 'admin_check' ],
+                'permission_callback' => [ $this, 'admin_permission_check' ],
             ],
         ] );
 
@@ -38,13 +37,9 @@ class AnalyticsController extends WP_REST_Controller {
             [
                 'methods'             => WP_REST_Server::READABLE,
                 'callback'            => [ $this, 'get_sales_chart' ],
-                'permission_callback' => [ $this, 'admin_check' ],
+                'permission_callback' => [ $this, 'admin_permission_check' ],
             ],
         ] );
-    }
-
-    public function admin_check() {
-        return current_user_can( 'manage_options' );
     }
 
     /**

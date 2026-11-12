@@ -211,9 +211,10 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    box-sizing: border-box;
     background: var(--owwc-admin-primary);
     color: #fff;
-    border: none;
+    border: 1px solid transparent;
     border-radius: var(--owwc-admin-radius-sm);
     padding: 6px 12px; /* Ukuran tombol lebih compact */
     font-size: 12.5px;
@@ -247,7 +248,7 @@
 .owwc-admin-btn-danger {
     background: transparent;
     color: var(--owwc-admin-danger);
-    border: 1.5px solid transparent;
+    border: 1px solid transparent;
 }
 
 .owwc-admin-btn-danger:hover {
@@ -257,9 +258,13 @@
 
 /* Tombol Kecil (Small Button) */
 .owwc-admin-btn-sm {
-    padding: 4px 8px;
-    font-size: 11px;
+    height: 30px;
+    min-height: 30px;
+    padding: 0 10px;
+    font-size: 12px;
+    line-height: 1;
     border-radius: var(--owwc-admin-radius-sm);
+    white-space: nowrap;
 }
 
 .owwc-btn-secondary {
@@ -642,3 +647,65 @@
 .owwc-text-xs {
     font-size: 10.5px !important;
 }
+
+/* ==============================================================
+   11. RESPONSIVE TABLES (MOBILE HORIZONTAL SCROLL)
+   ============================================================== */
+.owwc-table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 782px) {
+    .owwc-table-responsive .owwc-admin-table {
+        min-width: 640px;
+    }
+
+    .owwc-table-responsive .owwc-admin-table th,
+    .owwc-table-responsive .owwc-admin-table td {
+        white-space: nowrap;
+    }
+
+    /* Izinkan kolom nama produk tetap wrap jika panjang */
+    .owwc-table-responsive .owwc-admin-table td:nth-child(2) {
+        white-space: normal;
+        min-width: 180px;
+    }
+}
+
+/* ==============================================================
+   12. BULK STOCK EDIT CONTROLS (COMPACT & MOBILE SAFE)
+   ============================================================== */
+.owwc-bulk-set-all-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #f3f4f6;
+    border: 1px solid #d1d5db;
+    border-radius: var(--owwc-admin-radius);
+    padding: 3px 6px;
+}
+
+.owwc-admin-wrap input.owwc-admin-input.owwc-bulk-stock-input-sm,
+.owwc-admin-wrap input.owwc-admin-input.bulk-stock-input {
+    width: 76px !important;
+    min-height: 30px !important;
+    height: 30px !important;
+    padding: 4px 8px !important;
+    font-size: 13px !important;
+    line-height: 1.2 !important;
+    border-radius: 6px;
+    box-sizing: border-box;
+    margin: 0;
+}
+
+.owwc-admin-wrap .owwc-bulk-set-all-btn {
+    min-height: 30px !important;
+    height: 30px !important;
+    padding: 0 10px !important;
+    line-height: 28px !important;
+    background: #ffffff;
+    white-space: nowrap;
+}
+

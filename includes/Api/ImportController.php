@@ -1,13 +1,14 @@
 <?php
 namespace OwwCommerce\Api;
 
-use WP_REST_Controller;
 use WP_REST_Server;
 use WP_Error;
 use OwwCommerce\Repositories\ProductRepository;
 use OwwCommerce\Models\Product;
+use OwwCommerce\Database\BackupExporter;
+use OwwCommerce\Database\BackupImporter;
 
-class ImportController extends WP_REST_Controller {
+class ImportController extends BaseController {
 
     private ProductRepository $repository;
 
@@ -24,7 +25,7 @@ class ImportController extends WP_REST_Controller {
             [
                 'methods'             => WP_REST_Server::CREATABLE,
                 'callback'            => [ $this, 'import_excel' ],
-                'permission_callback' => [ $this, 'permissions_check' ],
+                'permission_callback' => [ $this, 'admin_permission_check' ],
             ],
         ] );
 
@@ -32,7 +33,23 @@ class ImportController extends WP_REST_Controller {
             [
                 'methods'             => WP_REST_Server::READABLE,
                 'callback'            => [ $this, 'export_excel' ],
-                'permission_callback' => [ $this, 'permissions_check' ],
+                'permission_callback' => [ $this, 'admin_permission_check' ],
+            ],
+        ] );
+
+        register_rest_route( $this->namespace, '/' . $this->rest_base . '/backup', [
+            [
+                'methods'             => WP_REST_Server::READABLE,
+                'callback'            => [ $this, 'download_backup' ],
+                'permission_callback' => [ $this, 'admin_permission_check' ],
+            ],
+        ] );
+
+        register_rest_route( $this->namespace, '/' . $this->rest_base . '/restore', [
+            [
+                'methods'             => WP_REST_Server::CREATABLE,
+                'callback'            => [ $this, 'restore_backup' ],
+                'permission_callback' => [ $this, 'admin_permission_check' ],
             ],
         ] );
 
@@ -40,13 +57,9 @@ class ImportController extends WP_REST_Controller {
             [
                 'methods'             => WP_REST_Server::READABLE,
                 'callback'            => [ $this, 'test_lib' ],
-                'permission_callback' => [ $this, 'permissions_check' ],
+                'permission_callback' => [ $this, 'admin_permission_check' ],
             ],
         ] );
-    }
-
-    public function permissions_check( $request ) {
-        return current_user_can( 'manage_options' );
     }
 
     /**
@@ -176,6 +189,60 @@ class ImportController extends WP_REST_Controller {
             if ( ob_get_length() ) ob_clean();
             wp_die( "Gagal membuat file CSV: " . $e->getMessage() );
         }
+    }
+
+    /**
+     * Mengunduh backup lengkap OwwCommerce (semua tabel, opsi, dan gambar lokal) sebagai ZIP.
+     */
+    public function download_backup() {
+        $exporter = new BackupExporter();
+        $zip_path = $exporter->create_backup_zip();
+
+        if ( is_wp_error( $zip_path ) ) {
+            return $zip_path;
+        }
+
+        while ( ob_get_level() ) {
+            ob_end_clean();
+        }
+
+        $filename = 'owwcommerce-backup-' . gmdate( 'Y-m-d-His' ) . '.zip';
+
+        header( 'Content-Type: application/zip' );
+        header( 'Content-Disposition: attachment; filename="' . $filename . '"' );
+        header( 'Content-Length: ' . filesize( $zip_path ) );
+        header( 'Cache-Control: no-store, no-cache, must-revalidate' );
+        header( 'Pragma: no-cache' );
+
+        readfile( $zip_path );
+        @unlink( $zip_path );
+        exit;
+    }
+
+    /**
+     * Memulihkan seluruh data & gambar OwwCommerce dari file ZIP backup.
+     */
+    public function restore_backup( $request ) {
+        $files = $request->get_file_params();
+
+        if ( empty( $files['backup_file'] ) || empty( $files['backup_file']['tmp_name'] ) ) {
+            return new WP_Error( 'no_file', 'File backup (.zip) tidak ditemukan dalam permintaan.', [ 'status' => 400 ] );
+        }
+
+        $file = $files['backup_file'];
+        $ext  = strtolower( pathinfo( $file['name'] ?? '', PATHINFO_EXTENSION ) );
+        if ( $ext !== 'zip' ) {
+            return new WP_Error( 'invalid_file_type', 'Hanya file arsip .zip backup OwwCommerce yang didukung.', [ 'status' => 400 ] );
+        }
+
+        $importer = new BackupImporter();
+        $result   = $importer->restore_from_zip( $file['tmp_name'] );
+
+        if ( is_wp_error( $result ) ) {
+            return $result;
+        }
+
+        return rest_ensure_response( $result );
     }
 
     public function test_lib() {

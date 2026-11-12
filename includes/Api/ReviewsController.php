@@ -1,7 +1,6 @@
 <?php
 namespace OwwCommerce\Api;
 
-use WP_REST_Controller;
 use WP_REST_Server;
 use WP_REST_Response;
 use WP_Error;
@@ -11,7 +10,7 @@ use OwwCommerce\Repositories\ReviewRepository;
 /**
  * Reviews API Controller
  */
-class ReviewsController extends WP_REST_Controller {
+class ReviewsController extends BaseController {
     private ReviewRepository $repository;
 
     public function __construct() {
@@ -49,7 +48,7 @@ class ReviewsController extends WP_REST_Controller {
             [
                 'methods'             => WP_REST_Server::READABLE,
                 'callback'            => [ $this, 'get_all_reviews' ],
-                'permission_callback' => [ $this, 'admin_permissions_check' ],
+                'permission_callback' => [ $this, 'admin_permission_check' ],
             ],
         ]);
 
@@ -57,7 +56,7 @@ class ReviewsController extends WP_REST_Controller {
             [
                 'methods'             => WP_REST_Server::DELETABLE,
                 'callback'            => [ $this, 'delete_review' ],
-                'permission_callback' => [ $this, 'admin_permissions_check' ],
+                'permission_callback' => [ $this, 'admin_permission_check' ],
             ],
         ]);
 
@@ -65,16 +64,9 @@ class ReviewsController extends WP_REST_Controller {
             [
                 'methods'             => WP_REST_Server::CREATABLE,
                 'callback'            => [ $this, 'approve_review' ],
-                'permission_callback' => [ $this, 'admin_permissions_check' ],
+                'permission_callback' => [ $this, 'admin_permission_check' ],
             ],
         ]);
-    }
-
-    /**
-     * Admin permissions check
-     */
-    public function admin_permissions_check( $request ) {
-        return current_user_can( 'manage_options' );
     }
 
     /**

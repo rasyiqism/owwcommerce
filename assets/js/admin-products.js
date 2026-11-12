@@ -10,18 +10,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const nonce = owwcSettings.nonce;
 
     // Helper untuk mencegah XSS
-    function escapeHTML(str) {
-        if (str === null || str === undefined) return '';
-        return String(str).replace(/[&<>'"]/g, 
-            tag => ({
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                "'": '&#39;',
-                '"': '&quot;'
-            }[tag] || tag)
-        );
-    }
+    const escapeHTML = window.owwcEscapeHTML;
 
     // =========================================================
     // LIST VIEW MODE (Jika ada container tabel)
@@ -34,7 +23,7 @@ document.addEventListener('DOMContentLoaded', function () {
             currentPage = page;
             appContainer.innerHTML = '<div class="owwc-admin-card" style="padding:0;"><p style="padding: 24px; text-align: center; color: #666;">Memuat produk...</p></div>';
             try {
-                const res = await fetch(`${apiBase}?page=${page}&per_page=${perPage}`, {
+                const res = await fetch(window.owwcBuildRestUrl('owwc/v1/products', { page, per_page: perPage }), {
                     method: 'GET',
                     headers: {
                         'X-WP-Nonce': nonce,
@@ -61,6 +50,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             let html = `
                 <div class="owwc-admin-card" style="padding:0; overflow:hidden;">
+                <div class="owwc-table-responsive">
                 <table class="owwc-admin-table" style="margin:0; border:none;">
                     <thead>
                         <tr>
@@ -98,7 +88,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 `;
             });
 
-            html += '</tbody></table></div>';
+            html += '</tbody></table></div></div>';
 
             // Pagination UI
             if (data.total_pages > 1) {
@@ -192,7 +182,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         if (!prodId) return;
 
                         const currentStock = badge.textContent.trim().split(' ')[0];
-                        td.innerHTML = `<input type="number" class="owwc-admin-input bulk-stock-input" data-id="${prodId}" value="${currentStock === 'Out' ? 0 : currentStock}" style="width: 80px; padding: 4px 8px;">`;
+                        td.innerHTML = `<input type="number" class="owwc-admin-input bulk-stock-input" data-id="${prodId}" value="${currentStock === 'Out' ? 0 : currentStock}" min="0">`;
                     });
                 } else {
                     // Simpan data
@@ -561,8 +551,16 @@ document.addEventListener('DOMContentLoaded', function () {
                         document.getElementById('prod-whatsapp-url').value = product.whatsapp_url;
                     }
 
+                    if (product.image_id) {
+                        const imgIdInput = document.getElementById('prod-image-id');
+                        if (imgIdInput) imgIdInput.value = product.image_id;
+                    }
                     if (product.image_url) {
-                        document.getElementById('prod-image').value = product.image_url;
+                        const imgInput = document.getElementById('prod-image');
+                        if (imgInput) {
+                            imgInput.value = product.image_url;
+                            imgInput.dataset.removed = 'false';
+                        }
                         const previewWrap = document.getElementById('prod-image-preview');
                         const previewImg = document.getElementById('prod-image-thumb');
                         const removeBtn = document.getElementById('prod-remove-image');
@@ -604,7 +602,11 @@ document.addEventListener('DOMContentLoaded', function () {
             const sku = document.getElementById('prod-sku').value || '';
             const stock = document.getElementById('prod-stock').value || 0;
             const status = document.getElementById('prod-status').value || 'publish';
-            const imageUrl = document.getElementById('prod-image')?.value || '';
+            const imageInputEl = document.getElementById('prod-image');
+            const imageUrl = imageInputEl?.value || '';
+            const imageIdRaw = document.getElementById('prod-image-id')?.value || '';
+            const imageId = imageIdRaw ? parseInt(imageIdRaw, 10) : null;
+            const imageRemoved = imageInputEl?.dataset.removed === 'true';
             const upsellIds = document.getElementById('prod-upsells')?.value || '';
             const crossSellIds = document.getElementById('prod-cross-sells')?.value || '';
             const checkoutUrl = document.getElementById('prod-checkout-url')?.value || '';
@@ -635,7 +637,9 @@ document.addEventListener('DOMContentLoaded', function () {
                         stock_qty: stock,
                         status: status,
                         type: prodType.value,
+                        image_id: imageId,
                         image_url: imageUrl,
+                        image_removed: imageRemoved,
                         gallery_ids: document.getElementById('prod-gallery')?.value ? document.getElementById('prod-gallery').value.split(',') : [],
                         upsell_ids: upsellIds,
                         cross_sell_ids: crossSellIds,
@@ -702,13 +706,17 @@ document.addEventListener('DOMContentLoaded', function () {
             // Saat gambar dipilih dari media library
             mediaFrame.on('select', function () {
                 const attachment = mediaFrame.state().get('selection').first().toJSON();
-                // Gunakan ukuran medium jika tersedia, fallback ke full
-                const imgUrl = (attachment.sizes && attachment.sizes.medium)
+                // Simpan URL asli (full) ke DB agar tidak 404 jika thumbnail di-regenerate, gunakan medium untuk preview
+                const fullUrl = attachment.url || (attachment.sizes && attachment.sizes.full ? attachment.sizes.full.url : '');
+                const previewUrl = (attachment.sizes && attachment.sizes.medium)
                     ? attachment.sizes.medium.url
-                    : attachment.url;
+                    : fullUrl;
 
-                imageInput.value = imgUrl;
-                previewImg.src = imgUrl;
+                imageInput.value = fullUrl;
+                imageInput.dataset.removed = 'false';
+                const imageIdInput = document.getElementById('prod-image-id');
+                if (imageIdInput) imageIdInput.value = attachment.id || '';
+                previewImg.src = previewUrl;
                 previewWrap.style.display = 'block';
                 if (removeBtn) removeBtn.style.display = 'inline-block';
                 uploadBtn.textContent = '📷 Ganti Gambar';
@@ -722,6 +730,9 @@ document.addEventListener('DOMContentLoaded', function () {
             removeBtn.addEventListener('click', function (e) {
                 e.preventDefault();
                 imageInput.value = '';
+                imageInput.dataset.removed = 'true';
+                const imageIdInput = document.getElementById('prod-image-id');
+                if (imageIdInput) imageIdInput.value = '';
                 previewImg.src = '';
                 previewWrap.style.display = 'none';
                 removeBtn.style.display = 'none';
@@ -780,7 +791,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         try {
             // Batch fetch media metadata dari WordPress REST API (hanya 1 HTTP request)
-            const res = await fetch(`${owwcSettings.restUrl}wp/v2/media?include=${ids.join(',')}`, {
+            const res = await fetch(window.owwcBuildRestUrl('wp/v2/media', { include: ids.join(',') }), {
                 headers: { 'X-WP-Nonce': nonce }
             });
             if (!res.ok) throw new Error("Gagal memuat detail galeri");

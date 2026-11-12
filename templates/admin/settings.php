@@ -333,6 +333,28 @@
                                 Unduh CSV Produk
                             </button>
                         </div>
+
+                        <div class="owwc-mt-4 owwc-p-3" style="border-top: 1px solid var(--owwc-admin-border);">
+                            <h3>Backup Lengkap (Data &amp; Gambar)</h3>
+                            <p class="owwc-text-muted owwc-mb-3">Unduh arsip <code>.zip</code> berisi seluruh data OwwCommerce (produk, variasi, kategori, kupon, pesanan, pelanggan, ulasan, pengaturan) beserta file gambar produk &amp; bukti bayar lokal.</p>
+                            <button type="button" id="owwc-backup-btn" class="owwc-admin-btn">
+                                <span class="dashicons dashicons-archive" style="margin-right: 6px;"></span>
+                                Unduh Backup Lengkap (.zip)
+                            </button>
+
+                            <div class="owwc-mt-4" style="padding-top: 16px; border-top: 1px dashed var(--owwc-admin-border);">
+                                <h3>Restore Backup (.zip)</h3>
+                                <p class="owwc-text-muted owwc-mb-2">Unggah file <code>owwcommerce-backup-*.zip</code> untuk memulihkan seluruh data dan gambar produk. <strong>Perhatian:</strong> Data OwwCommerce saat ini akan digantikan oleh data dari file backup.</p>
+                                <div class="form-field">
+                                    <input type="file" id="owwc-restore-file" accept=".zip" class="owwc-admin-input" style="padding: 6px;">
+                                </div>
+                                <button type="button" id="owwc-restore-btn" class="owwc-admin-btn owwc-btn-secondary owwc-mt-2">
+                                    <span class="dashicons dashicons-database-import" style="margin-right: 6px;"></span>
+                                    Restore Backup (.zip)
+                                </button>
+                                <p id="owwc-restore-status" class="owwc-text-xs owwc-mt-2" style="display: none;"></p>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

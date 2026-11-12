@@ -2,18 +2,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const tbody = document.getElementById('owwc-reviews-tbody');
 
     // Helper untuk mencegah XSS
-    function escapeHTML(str) {
-        if (str === null || str === undefined) return '';
-        return String(str).replace(/[&<>'"]/g, 
-            tag => ({
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                "'": '&#39;',
-                '"': '&quot;'
-            }[tag] || tag)
-        );
-    }
+    const escapeHTML = window.owwcEscapeHTML;
 
     const renderStars = (rating) => {
         let starsHtml = '';

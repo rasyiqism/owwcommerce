@@ -1,14 +1,13 @@
 <?php
 namespace OwwCommerce\Api;
 
-use WP_REST_Controller;
 use WP_REST_Server;
 use WP_REST_Response;
 use OwwCommerce\WooCommerce\Importer;
 use OwwCommerce\WooCommerce\ProductImporter;
 use OwwCommerce\WooCommerce\OrderImporter as WC_OrderImporter;
 
-class MigrationController extends WP_REST_Controller {
+class MigrationController extends BaseController {
 
     public function __construct() {
         add_action( 'rest_api_init', [ $this, 'register_routes' ] );
@@ -18,18 +17,14 @@ class MigrationController extends WP_REST_Controller {
         register_rest_route( 'owwc/v1', '/migration/stats', [
             'methods'             => WP_REST_Server::READABLE,
             'callback'            => [ $this, 'get_stats' ],
-            'permission_callback' => [ $this, 'permissions_check' ],
+            'permission_callback' => [ $this, 'admin_permission_check' ],
         ]);
 
         register_rest_route( 'owwc/v1', '/migration/run', [
             'methods'             => WP_REST_Server::CREATABLE,
             'callback'            => [ $this, 'run_migration' ],
-            'permission_callback' => [ $this, 'permissions_check' ],
+            'permission_callback' => [ $this, 'admin_permission_check' ],
         ]);
-    }
-
-    public function permissions_check() {
-        return current_user_can( 'manage_options' );
     }
 
     public function get_stats() {

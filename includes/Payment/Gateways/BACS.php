@@ -1,12 +1,12 @@
 <?php
 namespace OwwCommerce\Payment\Gateways;
 
-use OwwCommerce\Payment\PaymentGateway;
+use OwwCommerce\Payment\AbstractPaymentGateway;
 
 /**
  * Metode pembayaran BACS (Transfer Bank).
  */
-class BACS implements PaymentGateway {
+class BACS extends AbstractPaymentGateway {
 
     private string $id = 'bacs';
     
@@ -27,20 +27,9 @@ class BACS implements PaymentGateway {
     }
 
     public function process_payment( int $order_id ): array {
-        global $wpdb;
-
-        // Ubah status order menjadi 'on-hold' (menunggu pembayaran)
-        $wpdb->update(
-            $wpdb->prefix . 'oww_orders',
-            [ 'status' => 'on-hold' ],
-            [ 'id' => $order_id ],
-            [ '%s' ],
-            [ '%d' ]
-        );
-
         return [
             'success'      => true,
-            'redirect_url' => home_url( '/checkout/order-received/' . $order_id ), // Path contoh
+            'redirect_url' => $this->update_order_status_and_get_redirect( $order_id, 'on-hold' ),
             'message'      => 'Pembayaran telah dipilih, silahkan lakukan transfer bank ke rekening yang tertera.'
         ];
     }

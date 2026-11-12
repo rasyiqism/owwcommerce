@@ -86,26 +86,49 @@ class CheckoutController extends WP_REST_Controller {
                 continue;
             }
 
-            // Validasi stok cukup
-            if ( $product->stock_qty < $item['qty'] ) {
-                $stock_errors[] = sprintf(
-                    '%s (stok tersisa: %d, diminta: %d)',
-                    $product->title,
-                    $product->stock_qty,
-                    $item['qty']
-                );
-                continue;
+            $qty = max( 1, (int) ( $item['qty'] ?? 1 ) );
+            $variation_id = isset( $item['variation_id'] ) ? (int) $item['variation_id'] : 0;
+            $variation = $variation_id > 0 ? $this->product_repo->find_variation( $variation_id ) : null;
+
+            if ( $variation ) {
+                // Validasi stok variasi cukup
+                $var_stock = (int) $variation['stock_qty'];
+                if ( $var_stock < $qty ) {
+                    $label = $product->title . ( ! empty( $variation['sku'] ) ? ' (' . $variation['sku'] . ')' : '' );
+                    $stock_errors[] = sprintf(
+                        '%s (stok variasi tersisa: %d, diminta: %d)',
+                        $label,
+                        $var_stock,
+                        $qty
+                    );
+                    continue;
+                }
+                $price = ( $variation['sale_price'] !== null && $variation['sale_price'] !== '' )
+                    ? (float) $variation['sale_price']
+                    : (float) $variation['price'];
+            } else {
+                // Validasi stok produk induk cukup
+                if ( $product->stock_qty < $qty ) {
+                    $stock_errors[] = sprintf(
+                        '%s (stok tersisa: %d, diminta: %d)',
+                        $product->title,
+                        $product->stock_qty,
+                        $qty
+                    );
+                    continue;
+                }
+                $price = (float) ( $product->sale_price ?? $product->price );
             }
 
-            $price      = $product->sale_price ?? $product->price;
-            $line_total = $price * $item['qty'];
+            $line_total = $price * $qty;
             $total_amount += $line_total;
 
-            $order_item              = new OrderItem();
-            $order_item->product_id  = $product->id;
-            $order_item->qty         = $item['qty'];
-            $order_item->unit_price  = $price;
-            $order_item->total_price = $line_total;
+            $order_item               = new OrderItem();
+            $order_item->product_id   = $product->id;
+            $order_item->variation_id = $variation_id;
+            $order_item->qty          = $qty;
+            $order_item->unit_price   = $price;
+            $order_item->total_price  = $line_total;
 
             $order_items[] = $order_item;
         }
@@ -216,9 +239,13 @@ class CheckoutController extends WP_REST_Controller {
         try {
             $saved_order = $this->order_repo->create( $order );
 
-            // === STEP 6: Kurangi stok produk ===
+            // === STEP 6: Kurangi stok produk / variasi ===
             foreach ( $order_items as $oi ) {
-                $reduced = $this->product_repo->reduce_stock( $oi->product_id, $oi->qty );
+                if ( ! empty( $oi->variation_id ) ) {
+                    $reduced = $this->product_repo->reduce_variation_stock( $oi->variation_id, $oi->qty );
+                } else {
+                    $reduced = $this->product_repo->reduce_stock( $oi->product_id, $oi->qty );
+                }
                 if ( ! $reduced ) {
                     throw new \Exception( 'Stok produk tidak mencukupi saat proses finalisasi.' );
                 }

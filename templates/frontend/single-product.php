@@ -52,9 +52,13 @@ get_header(); ?>
 
         <!-- Kolom Kiri: Gambar Produk -->
         <div class="owwc-single-product-image">
+            <?php
+            $main_img_large = $product->get_image_url( 'large' );
+            $main_img_thumb = $product->get_image_url( 'thumbnail' );
+            ?>
             <div class="owwc-main-image-wrap">
-                <?php if ( ! empty( $product->image_url ) ) : ?>
-                    <img id="owwc-main-image" src="<?php echo esc_url( $product->image_url ); ?>"
+                <?php if ( ! empty( $main_img_large ) ) : ?>
+                    <img id="owwc-main-image" src="<?php echo esc_url( $main_img_large ); ?>"
                          alt="<?php echo esc_attr( $product->title ); ?>"
                          loading="lazy">
                 <?php else : ?>
@@ -72,9 +76,9 @@ get_header(); ?>
                 <div class="owwc-product-gallery">
                     <?php 
                     // Add main image as the first thumbnail
-                    if ( ! empty( $product->image_url ) ) : ?>
-                        <div class="owwc-gallery-thumb active" data-large="<?php echo esc_url( $product->image_url ); ?>">
-                            <img src="<?php echo esc_url( $product->image_url ); ?>" alt="Main Image">
+                    if ( ! empty( $main_img_large ) ) : ?>
+                        <div class="owwc-gallery-thumb active" data-large="<?php echo esc_url( $main_img_large ); ?>">
+                            <img src="<?php echo esc_url( $main_img_thumb ?: $main_img_large ); ?>" alt="Main Image">
                         </div>
                     <?php endif; ?>
 
@@ -133,7 +137,10 @@ get_header(); ?>
             </div>
 
             <div class="owwc-single-product-description">
-                <?php echo wp_kses_post( wpautop( $product->description ) ); ?>
+                <?php
+                $normalized_desc = preg_replace( '/\R+/', "\n\n", trim( (string) $product->description ) );
+                echo wp_kses_post( wpautop( $normalized_desc ) );
+                ?>
             </div>
 
             <!-- Variasi Produk (Jika Ada) -->

@@ -18,6 +18,8 @@ class Product {
     public ?float $sale_price;
     public ?string $sku;
     public int $stock_qty;
+    /** ID attachment media WordPress */
+    public ?int $image_id;
     /** URL gambar utama produk */
     public ?string $image_url;
     public array $gallery_ids = [];
@@ -44,6 +46,7 @@ class Product {
         $this->sale_price  = isset( $data['sale_price'] ) ? (float) $data['sale_price'] : null;
         $this->sku         = $data['sku'] ?? null;
         $this->stock_qty   = isset( $data['stock_qty'] ) ? (int) $data['stock_qty'] : 0;
+        $this->image_id    = ( isset( $data['image_id'] ) && $data['image_id'] !== '' && (int) $data['image_id'] > 0 ) ? (int) $data['image_id'] : null;
         $this->image_url   = $data['image_url'] ?? null;
 
         // Gallery handle
@@ -64,6 +67,20 @@ class Product {
         $this->updated_at  = $data['updated_at'] ?? null;
     }
 
+    /**
+     * Mengambil URL gambar utama secara dinamis dari Attachment ID (native WP),
+     * dengan fallback ke image_url jika attachment ID tidak ada atau file terhapus.
+     */
+    public function get_image_url( string $size = 'medium' ): ?string {
+        if ( ! empty( $this->image_id ) && function_exists( 'wp_get_attachment_image_url' ) ) {
+            $url = wp_get_attachment_image_url( $this->image_id, $size );
+            if ( $url ) {
+                return $url;
+            }
+        }
+        return $this->image_url;
+    }
+
     public function to_array(): array {
         return [
             'id'          => $this->id,
@@ -76,7 +93,8 @@ class Product {
             'sale_price'  => $this->sale_price,
             'sku'         => $this->sku,
             'stock_qty'   => $this->stock_qty,
-            'image_url'   => $this->image_url,
+            'image_id'    => $this->image_id,
+            'image_url'   => $this->get_image_url( 'full' ),
             'gallery_ids' => $this->gallery_ids,
             'sales_count' => $this->sales_count,
             'upsell_ids'  => $this->upsell_ids,

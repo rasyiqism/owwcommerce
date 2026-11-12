@@ -111,6 +111,10 @@ class CartController extends WP_REST_Controller {
         $variation_id = isset( $data['variation_id'] ) ? (int) $data['variation_id'] : 0;
         $qty          = isset( $data['qty'] ) ? (int) $data['qty'] : 1;
 
+        if ( $qty <= 0 ) {
+            return new WP_Error( 'invalid_qty', 'Kuantitas produk harus lebih dari 0.', [ 'status' => 400 ] );
+        }
+
         // Validasi produk
         $product = $this->product_repo->find( $product_id );
         if ( ! $product ) {
@@ -135,6 +139,10 @@ class CartController extends WP_REST_Controller {
         $key = $request['id'];
         $data = $request->get_json_params() ?: $request->get_params();
         $qty = isset( $data['qty'] ) ? (int) $data['qty'] : 1;
+
+        if ( $qty < 0 ) {
+            return new WP_Error( 'invalid_qty', 'Kuantitas produk tidak boleh negatif.', [ 'status' => 400 ] );
+        }
 
         $this->cart->update_item( $key, $qty );
         return $this->get_cart( $request );

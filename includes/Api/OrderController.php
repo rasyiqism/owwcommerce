@@ -1,7 +1,6 @@
 <?php
 namespace OwwCommerce\Api;
 
-use WP_REST_Controller;
 use WP_REST_Server;
 use WP_Error;
 use OwwCommerce\Core\Container;
@@ -19,7 +18,7 @@ use OwwCommerce\Emails\EmailSender;
  *   GET  /owwc/v1/orders/{id}    — detail pesanan (termasuk items + nama produk)
  *   PATCH /owwc/v1/orders/{id}/status — update status pesanan
  */
-class OrderController extends WP_REST_Controller {
+class OrderController extends BaseController {
 
     private OrderRepository $order_repo;
     private ProductRepository $product_repo;
@@ -41,7 +40,7 @@ class OrderController extends WP_REST_Controller {
             [
                 'methods'             => WP_REST_Server::READABLE,
                 'callback'            => [ $this, 'get_items' ],
-                'permission_callback' => [ $this, 'admin_permissions_check' ],
+                'permission_callback' => [ $this, 'admin_permission_check' ],
             ],
         ] );
 
@@ -59,7 +58,7 @@ class OrderController extends WP_REST_Controller {
             [
                 'methods'             => 'PATCH',
                 'callback'            => [ $this, 'update_status' ],
-                'permission_callback' => [ $this, 'admin_permissions_check' ],
+                'permission_callback' => [ $this, 'admin_permission_check' ],
                 'args'                => [
                     'status' => [
                         'required'          => true,
@@ -71,13 +70,6 @@ class OrderController extends WP_REST_Controller {
                 ],
             ],
         ] );
-    }
-
-    /**
-     * Hanya admin yang boleh mengakses endpoint orders.
-     */
-    public function admin_permissions_check( $request ) {
-        return current_user_can( 'manage_options' );
     }
 
     /**

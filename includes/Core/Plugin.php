@@ -139,6 +139,9 @@ class Plugin {
         new FloatingCart();
         new Customizer();
 
+        // Proteksi media produk dari plugin pembersih (Media Cleaner, dll.)
+        $this->setup_media_protection();
+
         // Frontend Scripts
         add_action('wp_enqueue_scripts', function() {
             // 1. Assets yang harus dimuat secara GLOBAL (agar floating cart & add to cart berfungsi di mana saja)
@@ -372,6 +375,39 @@ class Plugin {
                 }
             }
         });
+    }
+
+    /**
+     * Melindungi file media produk OwwCommerce agar tidak dianggap "unattached/unused"
+     * oleh plugin pembersih media (Media Cleaner, dll.), serta membersihkan referensi
+     * jika attachment dihapus secara manual dari Media Library.
+     */
+    private function setup_media_protection(): void {
+        add_filter( 'wpmc_is_used', function( $is_used, $attachment_id ) {
+            if ( $is_used ) {
+                return true;
+            }
+            global $wpdb;
+            $table = $wpdb->prefix . 'oww_products';
+            $found = $wpdb->get_var( $wpdb->prepare(
+                "SELECT id FROM {$table} WHERE image_id = %d OR FIND_IN_SET(%d, gallery_ids) > 0 LIMIT 1",
+                (int) $attachment_id,
+                (int) $attachment_id
+            ) );
+            return $found ? true : $is_used;
+        }, 10, 2 );
+
+        add_action( 'delete_attachment', function( $attachment_id ) {
+            global $wpdb;
+            $table = $wpdb->prefix . 'oww_products';
+            $wpdb->update(
+                $table,
+                [ 'image_id' => null ],
+                [ 'image_id' => (int) $attachment_id ],
+                [ '%d' ],
+                [ '%d' ]
+            );
+        } );
     }
 }
 

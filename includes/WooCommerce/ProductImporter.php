@@ -59,8 +59,15 @@ class ProductImporter {
                 'sale_price'  => $sale_price ? (float) $sale_price : null,
                 'sku'         => $sku,
                 'stock_qty'   => $stock ? (int) $stock : 0,
-                'image_url'   => $image_url,
             ];
+
+            if ( $thumb_id ) {
+                $data['image_id']  = (int) $thumb_id;
+                $data['image_url'] = $image_url;
+            } elseif ( ! $existing ) {
+                $data['image_id']  = null;
+                $data['image_url'] = null;
+            }
 
             if ( $existing ) {
                 $wpdb->update( $wpdb->prefix . 'oww_products', $data, [ 'id' => $existing ] );

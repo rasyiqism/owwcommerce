@@ -3,18 +3,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const form = document.getElementById('owwc-coupon-form');
 
     // Helper untuk mencegah XSS
-    function escapeHTML(str) {
-        if (str === null || str === undefined) return '';
-        return String(str).replace(/[&<>'"]/g, 
-            tag => ({
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                "'": '&#39;',
-                '"': '&quot;'
-            }[tag] || tag)
-        );
-    }
+    const escapeHTML = window.owwcEscapeHTML;
 
     function fetchCoupons() {
         fetch(`${owwcSettings.restUrl}owwc/v1/coupons`, {

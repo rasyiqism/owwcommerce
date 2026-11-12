@@ -1,9 +1,13 @@
 {
   "name": "owwcommerce",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "",
   "main": "index.js",
   "scripts": {
+    "wp:start": "docker compose -f docker-compose.dev.yml up -d",
+    "wp:stop": "docker compose -f docker-compose.dev.yml down",
+    "wp:logs": "docker compose -f docker-compose.dev.yml logs -f wordpress",
+    "wp:clean": "docker compose -f docker-compose.dev.yml down -v",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

@@ -33,6 +33,7 @@ class ProductRepository {
             'price'          => $product->price,
             'sale_price'     => $product->sale_price,
             'sku'            => $product->sku,
+            'image_id'       => $product->image_id,
             'image_url'      => $product->image_url,
             'gallery_ids'    => ! empty( $product->gallery_ids ) ? implode( ',', $product->gallery_ids ) : null,
             'upsell_ids'     => $product->upsell_ids,
@@ -54,6 +55,7 @@ class ProductRepository {
             '%f', // price
             '%f', // sale_price
             '%s', // sku
+            '%d', // image_id
             '%s', // image_url
             '%s', // gallery_ids
             '%s', // upsell_ids
@@ -207,13 +209,30 @@ class ProductRepository {
     }
 
     /**
-     * Menghapus produk.
+     * Menghapus produk beserta seluruh relasi anak (variasi, kategori, ulasan).
      */
     public function delete( int $id ): bool {
         global $wpdb;
         // Hapus variasi terkait terlebih dahulu
         $wpdb->delete( $this->table_variations, [ 'product_id' => $id ], [ '%d' ] );
+        // Hapus relasi kategori & ulasan untuk mencegah orphan records
+        $wpdb->delete( $wpdb->prefix . 'oww_product_category_rel', [ 'product_id' => $id ], [ '%d' ] );
+        $wpdb->delete( $wpdb->prefix . 'oww_reviews', [ 'product_id' => $id ], [ '%d' ] );
+
         return (bool) $wpdb->delete( $this->table_name, [ 'id' => $id ], [ '%d' ] );
+    }
+
+    /**
+     * Mencari satu variasi produk berdasarkan ID.
+     */
+    public function find_variation( int $variation_id ): ?array {
+        global $wpdb;
+        $row = $wpdb->get_row( $wpdb->prepare(
+            "SELECT * FROM {$this->table_variations} WHERE id = %d",
+            $variation_id
+        ), ARRAY_A );
+
+        return $row ?: null;
     }
 
     /**
@@ -226,12 +245,36 @@ class ProductRepository {
      */
     public function reduce_stock( int $product_id, int $qty ): bool {
         global $wpdb;
+        $qty = absint( $qty );
+        if ( $qty <= 0 ) {
+            return true;
+        }
 
         // Query atomik: hanya kurangi jika stok >= qty (anti-overselling)
         $result = $wpdb->query( $wpdb->prepare(
             "UPDATE {$this->table_name} SET stock_qty = stock_qty - %d WHERE id = %d AND stock_qty >= %d",
             $qty,
             $product_id,
+            $qty
+        ) );
+
+        return (bool) $result;
+    }
+
+    /**
+     * Mengurangi stok variasi produk secara atomik.
+     */
+    public function reduce_variation_stock( int $variation_id, int $qty ): bool {
+        global $wpdb;
+        $qty = absint( $qty );
+        if ( $qty <= 0 ) {
+            return true;
+        }
+
+        $result = $wpdb->query( $wpdb->prepare(
+            "UPDATE {$this->table_variations} SET stock_qty = stock_qty - %d WHERE id = %d AND stock_qty >= %d",
+            $qty,
+            $variation_id,
             $qty
         ) );
 

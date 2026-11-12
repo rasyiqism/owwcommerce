@@ -6,15 +6,14 @@
 if ( ! isset( $product ) ) return;
 
 $hover_bg = '#f9f9f9';
-if ( stripos( $product->title, 'car' ) !== false ) $hover_bg = '#FFF9E3';
-if ( stripos( $product->title, 'glass' ) !== false ) $hover_bg = '#F0F4F8';
+$img_url  = $product->get_image_url( 'medium' );
 ?>
 <div class="owwc-product-card" style="--owwc-card-hover-bg: <?php echo esc_attr( $hover_bg ); ?>">
     <div class="owwc-product-card-inner">
         <a href="<?php echo esc_url( \OwwCommerce\Frontend\Router::get_product_link( $product->slug ) ); ?>" class="owwc-product-link" aria-label="Lihat <?php echo esc_attr( $product->title ); ?>">
-            <?php if ( ! empty( $product->image_url ) ) : ?>
+            <?php if ( ! empty( $img_url ) ) : ?>
                 <div class="owwc-product-image">
-                    <img src="<?php echo esc_url( $product->image_url ); ?>"
+                    <img src="<?php echo esc_url( $img_url ); ?>"
                          alt="<?php echo esc_attr( $product->title ); ?>"
                          loading="lazy"
                          width="300" height="300">

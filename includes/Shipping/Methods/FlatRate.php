@@ -1,12 +1,12 @@
 <?php
 namespace OwwCommerce\Shipping\Methods;
 
-use OwwCommerce\Shipping\ShippingMethod;
+use OwwCommerce\Shipping\AbstractShippingMethod;
 
 /**
  * Metode pengiriman Flat Rate.
  */
-class FlatRate implements ShippingMethod {
+class FlatRate extends AbstractShippingMethod {
     
     private float $cost;
     private string $title;
@@ -29,12 +29,7 @@ class FlatRate implements ShippingMethod {
         $threshold = (float) get_option( 'owwc_free_shipping_threshold', 0 );
 
         if ( $threshold > 0 ) {
-            $subtotal = 0;
-            // Packages biasanya berisi cart items
-            foreach ( $packages as $item ) {
-                $subtotal += ( $item['price'] * $item['qty'] );
-            }
-
+            $subtotal = $this->calculate_packages_subtotal( $packages );
             if ( $subtotal >= $threshold ) {
                 return 0.00;
             }

@@ -45,11 +45,6 @@
                         if (data.html) {
                             grid.insertAdjacentHTML('beforeend', data.html);
                             btn.dataset.page = page;
-
-                            // Re-init Cart Event Listeners
-                            if (window.owwcCart) {
-                                window.owwcCart.init();
-                            }
                         }
                         if (!data.has_more) {
                             btn.parentElement.remove();

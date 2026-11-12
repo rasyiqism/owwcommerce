@@ -53,11 +53,12 @@ class OrderRepository {
             // Masukkan Item satu per satu
             foreach ( $order->items as $item ) {
                 $item_data = [
-                    'order_id'    => $order_id,
-                    'product_id'  => $item->product_id,
-                    'qty'         => $item->qty,
-                    'unit_price'  => $item->unit_price,
-                    'total_price' => $item->total_price,
+                    'order_id'     => $order_id,
+                    'product_id'   => $item->product_id,
+                    'variation_id' => $item->variation_id ?? 0,
+                    'qty'          => $item->qty,
+                    'unit_price'   => $item->unit_price,
+                    'total_price'  => $item->total_price,
                 ];
                 $wpdb->insert( $this->table_items, $item_data );
                 $item->id = $wpdb->insert_id;

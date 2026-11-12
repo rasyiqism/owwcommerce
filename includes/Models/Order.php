@@ -74,6 +74,7 @@ class Order {
             'id'               => $this->id,
             'customer_id'      => $this->customer_id,
             'status'           => $this->status,
+            'total_amount'     => $this->total_amount,
             'payment_method'   => $this->payment_method,
             'shipping_method'  => $this->shipping_method,
             'coupon_code'      => $this->coupon_code,

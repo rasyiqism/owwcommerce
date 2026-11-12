@@ -161,6 +161,7 @@
                         <a href="#" id="prod-remove-image" style="display: none; color: var(--owwc-admin-danger); font-size: 13px; text-decoration: none; margin-bottom: 15px;">&times; Hapus Gambar</a>
                         
                         <input type="hidden" id="prod-image" value="">
+                        <input type="hidden" id="prod-image-id" value="">
                         
                         <button type="button" class="owwc-admin-btn owwc-btn-outline" id="prod-upload-btn" style="width: 100%; padding: 12px; border-style: dashed; border-width: 2px;">
                             <span class="dashicons dashicons-camera" style="vertical-align: middle; margin-right: 5px;"></span> Set Gambar Produk

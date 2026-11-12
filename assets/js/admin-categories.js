@@ -7,18 +7,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!tableBody || typeof owwcSettings === 'undefined') return;
 
     // Helper untuk mencegah XSS
-    function escapeHTML(str) {
-        if (str === null || str === undefined) return '';
-        return String(str).replace(/[&<>'"]/g, 
-            tag => ({
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                "'": '&#39;',
-                '"': '&quot;'
-            }[tag] || tag)
-        );
-    }
+    const escapeHTML = window.owwcEscapeHTML;
 
     // Load Categories
     function loadCategories() {

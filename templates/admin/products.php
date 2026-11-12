@@ -7,13 +7,13 @@
 <div class="owwc-admin-wrap">
     <div class="owwc-admin-header owwc-mb-3">
         <h1><?php esc_html_e( 'Katalog Produk', 'owwcommerce' ); ?></h1>
-        <div class="owwc-flex-align-center owwc-flex-gap-2">
+        <div class="owwc-flex-align-center owwc-flex-wrap owwc-flex-gap-2">
             <!-- Helper Update Stok Massal Compact -->
-            <div id="owwc-bulk-set-all-wrap" class="owwc-flex-align-center owwc-flex-gap-2 owwc-p-2" style="display: none; background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: var(--owwc-admin-radius); padding-top: 2px; padding-bottom: 2px; height: 26px;">
-                <input type="number" id="owwc-bulk-stock-all-input" class="owwc-admin-input owwc-text-xs" placeholder="Stok..." style="width: 70px; height: 22px; padding: 2px 6px;">
-                <button id="owwc-bulk-stock-all-btn" class="owwc-admin-btn owwc-btn-secondary owwc-admin-btn-sm" style="height: 22px; padding: 0 8px; line-height: 22px; background: white;">Set Semua</button>
+            <div id="owwc-bulk-set-all-wrap" class="owwc-bulk-set-all-wrap" style="display: none;">
+                <input type="number" id="owwc-bulk-stock-all-input" class="owwc-admin-input owwc-bulk-stock-input-sm" placeholder="Stok..." min="0">
+                <button type="button" id="owwc-bulk-stock-all-btn" class="owwc-admin-btn owwc-btn-secondary owwc-admin-btn-sm owwc-bulk-set-all-btn">Set Semua</button>
             </div>
-            <button id="owwc-bulk-stock-btn" class="owwc-admin-btn owwc-btn-secondary owwc-admin-btn-sm">Update Stok Massal</button>
+            <button type="button" id="owwc-bulk-stock-btn" class="owwc-admin-btn owwc-btn-secondary owwc-admin-btn-sm">Update Stok Massal</button>
             <a href="?page=owwc-products&action=add" class="owwc-admin-btn owwc-admin-btn-sm" style="text-decoration: none;">Tambah Produk Baru</a>
         </div>
     </div>

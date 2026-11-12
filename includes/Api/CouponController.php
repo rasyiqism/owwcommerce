@@ -1,7 +1,6 @@
 <?php
 namespace OwwCommerce\Api;
 
-use WP_REST_Controller;
 use WP_REST_Server;
 use WP_Error;
 use OwwCommerce\Core\Container;
@@ -12,7 +11,7 @@ use OwwCommerce\Repositories\CouponRepository;
  * Class CouponController
  * REST API untuk manajemen dan validasi kupon.
  */
-class CouponController extends WP_REST_Controller {
+class CouponController extends BaseController {
 
     private CouponRepository $coupon_repo;
 
@@ -30,12 +29,12 @@ class CouponController extends WP_REST_Controller {
             [
                 'methods'             => WP_REST_Server::READABLE,
                 'callback'            => [ $this, 'get_items' ],
-                'permission_callback' => [ $this, 'admin_check' ],
+                'permission_callback' => [ $this, 'admin_permission_check' ],
             ],
             [
                 'methods'             => WP_REST_Server::CREATABLE,
                 'callback'            => [ $this, 'create_item' ],
-                'permission_callback' => [ $this, 'admin_check' ],
+                'permission_callback' => [ $this, 'admin_permission_check' ],
             ],
         ] );
 
@@ -53,13 +52,9 @@ class CouponController extends WP_REST_Controller {
             [
                 'methods'             => WP_REST_Server::DELETABLE,
                 'callback'            => [ $this, 'delete_item' ],
-                'permission_callback' => [ $this, 'admin_check' ],
+                'permission_callback' => [ $this, 'admin_permission_check' ],
             ],
         ] );
-    }
-
-    public function admin_check() {
-        return current_user_can( 'manage_options' );
     }
 
     /**

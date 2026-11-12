@@ -63,7 +63,77 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Export Logic
     document.getElementById('owwc-export-btn')?.addEventListener('click', () => {
-        const exportUrl = `${owwcSettings.restUrl}owwc/v1/import/export?_wpnonce=${owwcSettings.nonce}`;
+        const exportUrl = window.owwcBuildRestUrl('owwc/v1/import/export', { _wpnonce: owwcSettings.nonce });
         window.location.href = exportUrl;
+    });
+
+    const backupBtn = document.getElementById('owwc-backup-btn');
+    backupBtn?.addEventListener('click', () => {
+        const backupUrl = window.owwcBuildRestUrl('owwc/v1/import/backup', { _wpnonce: owwcSettings.nonce });
+        const origHtml = backupBtn.innerHTML;
+        backupBtn.disabled = true;
+        backupBtn.textContent = 'Menyiapkan ZIP...';
+        window.location.href = backupUrl;
+        setTimeout(() => {
+            backupBtn.disabled = false;
+            backupBtn.innerHTML = origHtml;
+        }, 2500);
+    });
+
+    const restoreBtn = document.getElementById('owwc-restore-btn');
+    const restoreFile = document.getElementById('owwc-restore-file');
+    const restoreStatus = document.getElementById('owwc-restore-status');
+    restoreBtn?.addEventListener('click', () => {
+        const file = restoreFile?.files?.[0];
+        if (!file) {
+            owwcAlert('Pilih file backup (.zip) terlebih dahulu.');
+            return;
+        }
+
+        owwcConfirm('Seluruh data OwwCommerce saat ini akan ditimpa dengan isi file backup. Lanjutkan restore?', async () => {
+            const origHtml = restoreBtn.innerHTML;
+            restoreBtn.disabled = true;
+            restoreBtn.textContent = 'Memulihkan Backup...';
+            if (restoreStatus) {
+                restoreStatus.style.display = 'block';
+                restoreStatus.style.color = '#666';
+                restoreStatus.textContent = 'Mengunggah & mengekstrak data serta gambar...';
+            }
+
+            const formData = new FormData();
+            formData.append('backup_file', file);
+
+            try {
+                const res = await fetch(window.owwcBuildRestUrl('owwc/v1/import/restore'), {
+                    method: 'POST',
+                    headers: { 'X-WP-Nonce': owwcSettings.nonce },
+                    body: formData
+                });
+                const data = await res.json();
+
+                if (res.ok && data.success) {
+                    if (restoreStatus) {
+                        restoreStatus.style.color = '#10b981';
+                        restoreStatus.textContent = `Restore berhasil! ${data.rows_restored} baris data, ${data.media_restored} file gambar, dan ${data.options_restored} pengaturan dipulihkan.`;
+                    }
+                    owwcAlert(`Restore berhasil! ${data.rows_restored} baris data dan ${data.media_restored} gambar dipulihkan.`);
+                } else {
+                    const msg = data.message || 'Gagal memulihkan backup.';
+                    if (restoreStatus) {
+                        restoreStatus.style.color = '#ef4444';
+                        restoreStatus.textContent = msg;
+                    }
+                    owwcAlert(msg);
+                }
+            } catch (err) {
+                if (restoreStatus) {
+                    restoreStatus.style.color = '#ef4444';
+                    restoreStatus.textContent = 'Kesalahan jaringan saat mengunggah backup.';
+                }
+            } finally {
+                restoreBtn.disabled = false;
+                restoreBtn.innerHTML = origHtml;
+            }
+        });
     });
 });

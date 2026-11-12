@@ -1,7 +1,6 @@
 <?php
 namespace OwwCommerce\Api;
 
-use WP_REST_Controller;
 use WP_REST_Server;
 use WP_REST_Response;
 use WP_Error;
@@ -9,7 +8,7 @@ use OwwCommerce\Repositories\AttributeRepository;
 use OwwCommerce\Models\Attribute;
 use OwwCommerce\Models\AttributeTerm;
 
-class AttributeController extends WP_REST_Controller {
+class AttributeController extends BaseController {
 
     private AttributeRepository $repository;
 
@@ -26,12 +25,12 @@ class AttributeController extends WP_REST_Controller {
             [
                 'methods'             => WP_REST_Server::READABLE,
                 'callback'            => [ $this, 'get_items' ],
-                'permission_callback' => [ $this, 'permissions_check' ],
+                'permission_callback' => [ $this, 'admin_permission_check' ],
             ],
             [
                 'methods'             => WP_REST_Server::CREATABLE,
                 'callback'            => [ $this, 'create_item' ],
-                'permission_callback' => [ $this, 'permissions_check' ],
+                'permission_callback' => [ $this, 'admin_permission_check' ],
                 'args'                => [
                     'name' => [
                         'required' => true,
@@ -45,12 +44,12 @@ class AttributeController extends WP_REST_Controller {
             [
                 'methods'             => WP_REST_Server::READABLE,
                 'callback'            => [ $this, 'get_terms' ],
-                'permission_callback' => [ $this, 'permissions_check' ],
+                'permission_callback' => [ $this, 'admin_permission_check' ],
             ],
             [
                 'methods'             => WP_REST_Server::CREATABLE,
                 'callback'            => [ $this, 'create_term' ],
-                'permission_callback' => [ $this, 'permissions_check' ],
+                'permission_callback' => [ $this, 'admin_permission_check' ],
                 'args'                => [
                     'name' => [
                         'required' => true,
@@ -59,10 +58,6 @@ class AttributeController extends WP_REST_Controller {
                 ],
             ],
         ] );
-    }
-
-    public function permissions_check( $request ) {
-        return current_user_can( 'manage_options' );
     }
 
     public function get_items( $request ) {

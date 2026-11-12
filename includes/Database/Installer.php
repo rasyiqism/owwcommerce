@@ -26,6 +26,7 @@ class Installer {
             sale_price decimal(10,2) DEFAULT NULL,
             sku varchar(100) DEFAULT NULL,
             stock_qty int(11) NOT NULL DEFAULT '0',
+            image_id bigint(20) unsigned DEFAULT NULL,
             image_url varchar(500) DEFAULT NULL,
             gallery_ids text DEFAULT NULL,
             upsell_ids text DEFAULT NULL,
@@ -40,6 +41,7 @@ class Installer {
             UNIQUE KEY slug (slug),
             KEY type (type),
             KEY sku (sku),
+            KEY image_id (image_id),
             KEY created_by (created_by)
         ) $collate;";
 
@@ -88,12 +90,14 @@ class Installer {
             id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
             order_id bigint(20) unsigned NOT NULL,
             product_id bigint(20) unsigned NOT NULL,
+            variation_id bigint(20) unsigned DEFAULT '0',
             qty int(11) NOT NULL DEFAULT '1',
             unit_price decimal(10,2) NOT NULL DEFAULT '0.00',
             total_price decimal(10,2) NOT NULL DEFAULT '0.00',
             PRIMARY KEY  (id),
             KEY order_id (order_id),
-            KEY product_id (product_id)
+            KEY product_id (product_id),
+            KEY variation_id (variation_id)
         ) $collate;";
 
         // Tabel: wp_oww_categories
@@ -206,6 +210,14 @@ class Installer {
         dbDelta( $sql_variations );
         dbDelta( $sql_reviews );
 
+        // Migrasi eksplisit kolom baru agar kompatibel dengan instalasi lama
+        if ( ! $wpdb->get_var( "SHOW COLUMNS FROM {$table_products} LIKE 'image_id'" ) ) {
+            $wpdb->query( "ALTER TABLE {$table_products} ADD COLUMN image_id bigint(20) unsigned DEFAULT NULL AFTER stock_qty, ADD KEY image_id (image_id)" );
+        }
+        if ( ! $wpdb->get_var( "SHOW COLUMNS FROM {$table_order_items} LIKE 'variation_id'" ) ) {
+            $wpdb->query( "ALTER TABLE {$table_order_items} ADD COLUMN variation_id bigint(20) unsigned DEFAULT '0' AFTER product_id, ADD KEY variation_id (variation_id)" );
+        }
+
         self::insert_default_data();
 
         update_option( 'owwcommerce_db_version', OWWCOMMERCE_VERSION );
@@ -259,6 +271,7 @@ class Installer {
         }
 
         // 4. Tambah Produk 1: Buku (Simple Product)
+        $img1 = self::register_demo_image( 'buku-bisnis.png', 'Panduan Sukses Bisnis Online' );
         $wpdb->insert( $table_products, [
             'title'        => 'Panduan Sukses Bisnis Online',
             'slug'         => 'panduan-sukses-bisnis-online',
@@ -269,7 +282,8 @@ class Installer {
             'sale_price'   => 99000.00,
             'sku'          => 'BUKU-001',
             'stock_qty'    => 25,
-            'image_url'    => 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=600',
+            'image_id'     => $img1['id'],
+            'image_url'    => $img1['url'],
             'sales_count'  => 12, // Memicu status badge "TERLARIS"
         ] );
         $prod1_id = $wpdb->insert_id;
@@ -296,6 +310,7 @@ class Installer {
         ] );
 
         // 5. Tambah Produk 2: Pakaian (Variable Product)
+        $img2 = self::register_demo_image( 'kaos-premium.png', 'Kaos Premium OwwCommerce' );
         $wpdb->insert( $table_products, [
             'title'        => 'Kaos Premium OwwCommerce',
             'slug'         => 'kaos-premium-owwcommerce',
@@ -306,7 +321,8 @@ class Installer {
             'sale_price'   => null,
             'sku'          => 'KAOS-001',
             'stock_qty'    => 35,
-            'image_url'    => 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&q=80&w=600',
+            'image_id'     => $img2['id'],
+            'image_url'    => $img2['url'],
         ] );
         $prod2_id = $wpdb->insert_id;
         if ( isset( $cat_ids['pakaian'] ) ) {
@@ -332,6 +348,7 @@ class Installer {
         ] );
 
         // 6. Tambah Produk 3: Elektronik (Simple Product - Checkout Eksternal/WA)
+        $img3 = self::register_demo_image( 'earphone-bass.png', 'Earphone Bass Booster' );
         $wpdb->insert( $table_products, [
             'title'        => 'Earphone Bass Booster',
             'slug'         => 'earphone-bass-booster',
@@ -342,7 +359,8 @@ class Installer {
             'sale_price'   => 59000.00,
             'sku'          => 'EAR-001',
             'stock_qty'    => 50,
-            'image_url'    => 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&q=80&w=600',
+            'image_id'     => $img3['id'],
+            'image_url'    => $img3['url'],
             'checkout_url' => 'https://shopee.co.id',
             'whatsapp_url' => '628123456789',
         ] );
@@ -367,6 +385,53 @@ class Installer {
 
         // Set opsi flag agar data demo tidak di-impor ulang di masa mendatang
         update_option( 'owwc_demo_data_imported', 1 );
+    }
+
+    /**
+     * Menyalin gambar demo lokal dari assets/images/demo/ ke wp-content/uploads/
+     * dan mendaftarkannya ke Media Library agar memiliki image_id & ikut ter-backup.
+     */
+    public static function register_demo_image( string $filename, string $title ): array {
+        $src_path = OWWCOMMERCE_PLUGIN_DIR . 'assets/images/demo/' . $filename;
+        $fallback = OWWCOMMERCE_PLUGIN_URL . 'assets/images/demo/' . $filename;
+
+        if ( ! file_exists( $src_path ) || ! function_exists( 'wp_upload_bits' ) ) {
+            return [ 'id' => null, 'url' => $fallback ];
+        }
+
+        $contents = file_get_contents( $src_path );
+        if ( $contents === false ) {
+            return [ 'id' => null, 'url' => $fallback ];
+        }
+
+        $upload = wp_upload_bits( $filename, null, $contents );
+        if ( ! empty( $upload['error'] ) || empty( $upload['file'] ) ) {
+            return [ 'id' => null, 'url' => $fallback ];
+        }
+
+        $filetype = wp_check_filetype( $upload['file'], null );
+        $att_id   = wp_insert_attachment( [
+            'post_mime_type' => $filetype['type'] ?: 'image/png',
+            'post_title'     => sanitize_text_field( $title ),
+            'post_status'    => 'inherit',
+        ], $upload['file'] );
+
+        if ( is_wp_error( $att_id ) || ! $att_id ) {
+            return [ 'id' => null, 'url' => $upload['url'] ?? $fallback ];
+        }
+
+        if ( ! function_exists( 'wp_generate_attachment_metadata' ) ) {
+            require_once ABSPATH . 'wp-admin/includes/image.php';
+        }
+        $meta = wp_generate_attachment_metadata( $att_id, $upload['file'] );
+        if ( is_array( $meta ) ) {
+            wp_update_attachment_metadata( $att_id, $meta );
+        }
+
+        return [
+            'id'  => (int) $att_id,
+            'url' => wp_get_attachment_url( $att_id ) ?: ( $upload['url'] ?? $fallback ),
+        ];
     }
 }
 

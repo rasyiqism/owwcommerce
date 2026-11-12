@@ -6,18 +6,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const cancelTermBtn = document.getElementById('cancel-term-mode');
 
     // Helper untuk mencegah XSS
-    function escapeHTML(str) {
-        if (str === null || str === undefined) return '';
-        return String(str).replace(/[&<>'"]/g, 
-            tag => ({
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                "'": '&#39;',
-                '"': '&quot;'
-            }[tag] || tag)
-        );
-    }
+    const escapeHTML = window.owwcEscapeHTML;
 
     function fetchAttributes() {
         fetch(`${owwcSettings.restUrl}owwc/v1/attributes`, {

@@ -264,185 +264,79 @@ class Menu {
      * Enqueue JS and CSS for Admin Pages
      */
     public function enqueue_scripts($hook) {
-        if (strpos($hook, 'owwc') !== false || $hook === 'toplevel_page_owwcommerce') {
-            // Enqueue WordPress Media Library untuk upload gambar produk
-            wp_enqueue_media();
-
-            // CSS Admin Framework OwwCommerce
-            wp_enqueue_style(
-                'owwc-admin-style',
-                OWWCOMMERCE_PLUGIN_URL . 'assets/css/admin.css',
-                [],
-                OWWCOMMERCE_VERSION
-            );
-
-            // Script Global Admin (Modal Custom)
-            wp_enqueue_script(
-                'owwc-admin-global',
-                OWWCOMMERCE_PLUGIN_URL . 'assets/js/admin-global.js',
-                [],
-                OWWCOMMERCE_VERSION,
-                true
-            );
-
-            wp_enqueue_script(
-                'owwc-admin-products',
-                OWWCOMMERCE_PLUGIN_URL . 'assets/js/admin-products.js',
-                ['owwc-admin-global'],
-                OWWCOMMERCE_VERSION,
-                true
-            );
-            
-            wp_localize_script('owwc-admin-products', 'owwcSettings', [
-                'restUrl'     => esc_url_raw(rest_url()),
-                'nonce'       => wp_create_nonce('wp_rest'),
-                'homeUrl'     => esc_url(home_url('/')),
-                'productBase' => \OwwCommerce\Frontend\Router::get_product_base_static()
-            ]);
+        if ( strpos($hook, 'owwc') === false && $hook !== 'toplevel_page_owwcommerce' ) {
+            return;
         }
 
-        if (strpos($hook, 'owwc-categories') !== false) {
-            wp_enqueue_script(
-                'owwc-admin-categories',
-                OWWCOMMERCE_PLUGIN_URL . 'assets/js/admin-categories.js',
-                ['owwc-admin-global'],
-                OWWCOMMERCE_VERSION,
-                true
-            );
+        wp_enqueue_media();
 
-            wp_localize_script('owwc-admin-categories', 'owwcSettings', [
-                'restUrl' => esc_url_raw(rest_url()),
-                'nonce'   => wp_create_nonce('wp_rest')
-            ]);
-        }
+        wp_enqueue_style(
+            'owwc-admin-style',
+            OWWCOMMERCE_PLUGIN_URL . 'assets/css/admin.css',
+            [],
+            OWWCOMMERCE_VERSION
+        );
 
-        // Enqueue admin-orders.js pada halaman detail order
-        if (strpos($hook, 'owwc-order-detail') !== false || strpos($hook, 'owwc-orders') !== false) {
-            wp_enqueue_script(
-                'owwc-admin-orders',
-                OWWCOMMERCE_PLUGIN_URL . 'assets/js/admin-orders.js',
-                ['owwc-admin-global'],
-                OWWCOMMERCE_VERSION,
-                true
-            );
+        // Script Global Admin (Modal Custom & Helper DRY)
+        wp_enqueue_script(
+            'owwc-admin-global',
+            OWWCOMMERCE_PLUGIN_URL . 'assets/js/admin-global.js',
+            [],
+            OWWCOMMERCE_VERSION,
+            true
+        );
 
-            wp_localize_script('owwc-admin-orders', 'owwcSettings', [
-                'restUrl' => esc_url_raw(rest_url()),
-                'nonce'   => wp_create_nonce('wp_rest')
-            ]);
-        }
+        // Localize owwcSettings satu kali pada script global agar tersedia di semua halaman admin
+        wp_localize_script('owwc-admin-global', 'owwcSettings', [
+            'restUrl'        => esc_url_raw(rest_url()),
+            'nonce'          => wp_create_nonce('wp_rest'),
+            'homeUrl'        => esc_url(home_url('/')),
+            'productBase'    => \OwwCommerce\Frontend\Router::get_product_base_static(),
+            'currencySymbol' => get_option('owwc_currency_symbol', 'Rp'),
+            'thousandSep'    => get_option('owwc_thousand_sep', '.'),
+            'decimalSep'     => get_option('owwc_decimal_sep', ','),
+        ]);
 
-        if (strpos($hook, 'toplevel_page_owwcommerce') !== false) {
-            // Load Chart.js dari CDN (Zero-Bloatware: hanya dimuat di dashboard)
-            wp_enqueue_script('chart-js', 'https://cdn.jsdelivr.net/npm/chart.js', [], '4.4.1', true);
-            
-            wp_enqueue_script(
-                'owwc-admin-dashboard',
-                OWWCOMMERCE_PLUGIN_URL . 'assets/js/admin-dashboard.js',
-                ['chart-js', 'owwc-admin-global'],
-                OWWCOMMERCE_VERSION,
-                true
-            );
+        // Script Produk (juga dibutuhkan untuk modal/aksi cepat di halaman produk)
+        wp_enqueue_script(
+            'owwc-admin-products',
+            OWWCOMMERCE_PLUGIN_URL . 'assets/js/admin-products.js',
+            ['owwc-admin-global'],
+            OWWCOMMERCE_VERSION,
+            true
+        );
 
-            wp_localize_script('owwc-admin-dashboard', 'owwcSettings', [
-                'restUrl'         => esc_url_raw(rest_url()),
-                'nonce'           => wp_create_nonce('wp_rest'),
-                'currencySymbol'  => get_option( 'owwc_currency_symbol', 'Rp' ),
-                'thousandSep'     => get_option( 'owwc_thousand_sep', '.' ),
-                'decimalSep'      => get_option( 'owwc_decimal_sep', ',' ),
-            ]);
-        }
+        // Peta script spesifik per halaman admin
+        $page_scripts = [
+            'owwc-categories'           => [['owwc-admin-categories', 'assets/js/admin-categories.js', ['owwc-admin-global']]],
+            'owwc-orders'               => [['owwc-admin-orders', 'assets/js/admin-orders.js', ['owwc-admin-global']]],
+            'owwc-order-detail'         => [['owwc-admin-orders', 'assets/js/admin-orders.js', ['owwc-admin-global']]],
+            'owwc-coupons'              => [['owwc-admin-coupons', 'assets/js/admin-coupons.js', ['owwc-admin-global']]],
+            'owwc-migration'            => [['owwc-admin-migration', 'assets/js/admin-migration.js', ['owwc-admin-global']]],
+            'owwc-attributes'           => [['owwc-admin-attributes', 'assets/js/admin-attributes.js', ['owwc-admin-global']]],
+            'owwc-reviews'              => [['owwc-admin-reviews', 'assets/js/admin-reviews.js', ['owwc-admin-global']]],
+            'toplevel_page_owwcommerce' => [
+                ['chart-js', 'https://cdn.jsdelivr.net/npm/chart.js', [], '4.4.1'],
+                ['owwc-admin-dashboard', 'assets/js/admin-dashboard.js', ['chart-js', 'owwc-admin-global']],
+            ],
+            'owwc-settings'             => [
+                ['owwc-admin-settings', 'assets/js/admin-settings.js', ['owwc-admin-global']],
+                ['owwc-admin-migration', 'assets/js/admin-migration.js', ['owwc-admin-global']],
+                ['owwc-admin-import', 'assets/js/admin-import.js', ['owwc-admin-global']],
+            ],
+        ];
 
-        if (strpos($hook, 'owwc-coupons') !== false) {
-            wp_enqueue_script(
-                'owwc-admin-coupons',
-                OWWCOMMERCE_PLUGIN_URL . 'assets/js/admin-coupons.js',
-                ['owwc-admin-global'],
-                OWWCOMMERCE_VERSION,
-                true
-            );
-
-            wp_localize_script('owwc-admin-coupons', 'owwcSettings', [
-                'restUrl' => esc_url_raw(rest_url()),
-                'nonce'   => wp_create_nonce('wp_rest')
-            ]);
-        }
-
-        if (strpos($hook, 'owwc-migration') !== false) {
-            wp_enqueue_script(
-                'owwc-admin-migration',
-                OWWCOMMERCE_PLUGIN_URL . 'assets/js/admin-migration.js',
-                ['owwc-admin-global'],
-                OWWCOMMERCE_VERSION,
-                true
-            );
-
-            wp_localize_script('owwc-admin-migration', 'owwcSettings', [
-                'restUrl' => esc_url_raw(rest_url()),
-                'nonce'   => wp_create_nonce('wp_rest')
-            ]);
-        }
-
-        if (strpos($hook, 'owwc-attributes') !== false) {
-            wp_enqueue_script(
-                'owwc-admin-attributes',
-                OWWCOMMERCE_PLUGIN_URL . 'assets/js/admin-attributes.js',
-                ['owwc-admin-global'],
-                OWWCOMMERCE_VERSION,
-                true
-            );
-
-            wp_localize_script('owwc-admin-attributes', 'owwcSettings', [
-                'restUrl' => esc_url_raw(rest_url()),
-                'nonce'   => wp_create_nonce('wp_rest')
-            ]);
-        }
-
-        if (strpos($hook, 'owwc-reviews') !== false) {
-            wp_enqueue_script(
-                'owwc-admin-reviews',
-                OWWCOMMERCE_PLUGIN_URL . 'assets/js/admin-reviews.js',
-                ['owwc-admin-global'],
-                OWWCOMMERCE_VERSION,
-                true
-            );
-
-            wp_localize_script('owwc-admin-reviews', 'owwcSettings', [
-                'restUrl' => esc_url_raw(rest_url()),
-                'nonce'   => wp_create_nonce('wp_rest')
-            ]);
-        }
-
-        if (strpos($hook, 'owwc-settings') !== false) {
-            wp_enqueue_script(
-                'owwc-admin-settings',
-                OWWCOMMERCE_PLUGIN_URL . 'assets/js/admin-settings.js',
-                ['owwc-admin-global'],
-                OWWCOMMERCE_VERSION,
-                true
-            );
-
-            // Enqueue scripts for Migration and Import/Export since they are now tabs
-            wp_enqueue_script(
-                'owwc-admin-migration',
-                OWWCOMMERCE_PLUGIN_URL . 'assets/js/admin-migration.js',
-                ['owwc-admin-global'],
-                OWWCOMMERCE_VERSION,
-                true
-            );
-
-            wp_localize_script('owwc-admin-migration', 'owwcSettings', [
-                'restUrl' => esc_url_raw(rest_url()),
-                'nonce'   => wp_create_nonce('wp_rest')
-            ]);
-
-            wp_enqueue_script(
-                'owwc-admin-import',
-                OWWCOMMERCE_PLUGIN_URL . 'assets/js/admin-import.js',
-                ['owwc-admin-global'],
-                OWWCOMMERCE_VERSION,
-                true
-            );
+        foreach ($page_scripts as $slug => $scripts) {
+            if (strpos($hook, $slug) === false) {
+                continue;
+            }
+            foreach ($scripts as $script) {
+                $handle  = $script[0];
+                $src     = strpos($script[1], 'http') === 0 ? $script[1] : OWWCOMMERCE_PLUGIN_URL . $script[1];
+                $deps    = $script[2] ?? [];
+                $version = $script[3] ?? OWWCOMMERCE_VERSION;
+                wp_enqueue_script($handle, $src, $deps, $version, true);
+            }
         }
     }
 

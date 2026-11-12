@@ -1,12 +1,12 @@
 <?php
 namespace OwwCommerce\Payment\Gateways;
 
-use OwwCommerce\Payment\PaymentGateway;
+use OwwCommerce\Payment\AbstractPaymentGateway;
 
 /**
  * Metode pembayaran COD (Bayar di Tempat).
  */
-class COD implements PaymentGateway {
+class COD extends AbstractPaymentGateway {
 
     private string $id = 'cod';
     
@@ -27,20 +27,9 @@ class COD implements PaymentGateway {
     }
 
     public function process_payment( int $order_id ): array {
-        global $wpdb;
-
-        // COD menandakan bahwa status order di-set ke processing atau pending langsung
-        $wpdb->update(
-            $wpdb->prefix . 'oww_orders',
-            [ 'status' => 'processing' ],
-            [ 'id' => $order_id ],
-            [ '%s' ],
-            [ '%d' ]
-        );
-
         return [
             'success'      => true,
-            'redirect_url' => home_url( '/checkout/order-received/' . $order_id ), // Path contoh
+            'redirect_url' => $this->update_order_status_and_get_redirect( $order_id, 'processing' ),
             'message'      => 'Pesanan diterima, siapkan uang tunai saat kurir tiba.'
         ];
     }

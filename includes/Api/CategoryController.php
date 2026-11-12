@@ -8,11 +8,11 @@ use OwwCommerce\Models\Category;
 /**
  * Controller API untuk OwwCommerce Categories
  */
-class CategoryController {
+class CategoryController extends BaseController {
     
     private Container $container;
-    private string $namespace = 'owwc/v1';
-    private string $rest_base = 'categories';
+    protected $namespace = 'owwc/v1';
+    protected $rest_base = 'categories';
     
     // Inject repository langsung jika belum diregister di container
     private CategoryRepository $repository;
@@ -29,12 +29,12 @@ class CategoryController {
             [
                 'methods'             => \WP_REST_Server::READABLE,
                 'callback'            => [ $this, 'get_items' ],
-                'permission_callback' => [ $this, 'get_items_permissions_check' ],
+                'permission_callback' => '__return_true',
             ],
             [
                 'methods'             => \WP_REST_Server::CREATABLE,
                 'callback'            => [ $this, 'create_item' ],
-                'permission_callback' => [ $this, 'create_item_permissions_check' ],
+                'permission_callback' => [ $this, 'admin_permission_check' ],
             ]
         ] );
 
@@ -42,30 +42,9 @@ class CategoryController {
             [
                 'methods'             => \WP_REST_Server::DELETABLE,
                 'callback'            => [ $this, 'delete_item' ],
-                'permission_callback' => [ $this, 'delete_item_permissions_check' ],
+                'permission_callback' => [ $this, 'admin_permission_check' ],
             ],
         ] );
-    }
-
-    /**
-     * Cek izin membaca items (public sementara)
-     */
-    public function get_items_permissions_check( $request ) {
-        return true; 
-    }
-
-    /**
-     * Cek izin membuat item (harus admin toko)
-     */
-    public function create_item_permissions_check( $request ) {
-        return current_user_can( 'manage_options' ); // Adjust to proper shop manager cap later
-    }
-
-    /**
-     * Cek izin membuang item (harus admin toko)
-     */
-    public function delete_item_permissions_check( $request ) {
-        return current_user_can( 'manage_options' );
     }
 
     /**

@@ -28,7 +28,7 @@ class Router {
     public function maybe_flush_rules() {
         $current_base = $this->get_current_product_base();
         $stored_base  = get_option('owwc_last_flushed_base');
-        $force_flush  = isset($_GET['owwc_debug']) && $_GET['owwc_debug'] === 'flush';
+        $force_flush  = isset($_GET['owwc_debug']) && $_GET['owwc_debug'] === 'flush' && current_user_can('manage_options');
 
         if ( $current_base !== $stored_base || $force_flush ) {
             flush_rewrite_rules(true);

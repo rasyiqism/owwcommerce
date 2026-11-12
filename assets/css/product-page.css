@@ -148,18 +148,48 @@ text-decoration: none;
 }
 
 .owwc-single-product-description {
-font-size: 14px;
-    line-height: 1.6;
+    font-size: 14.5px;
+    line-height: 1.75;
     color: var(--owwc-text-secondary);
     margin-bottom: 24px;
+    overflow-wrap: break-word;
 }
 
 .owwc-single-product-description p {
-margin: 0 0 12px 0;
+    margin: 0 0 14px 0;
+    margin-block: 0 14px;
 }
 
 .owwc-single-product-description p:last-child {
     margin-bottom: 0;
+    margin-block-end: 0;
+}
+
+.owwc-single-product-description ul,
+.owwc-single-product-description ol {
+    margin: 0 0 14px 0;
+    padding-left: 20px;
+}
+
+.owwc-single-product-description li {
+    margin-bottom: 6px;
+}
+
+.owwc-single-product-description h2,
+.owwc-single-product-description h3,
+.owwc-single-product-description h4 {
+    color: var(--owwc-text-main);
+    font-weight: 700;
+    margin: 16px 0 8px 0;
+    line-height: 1.35;
+}
+
+.owwc-single-product-description blockquote {
+    margin: 0 0 14px 0;
+    padding: 10px 14px;
+    border-left: 3px solid var(--owwc-primary);
+    background: #f9fafb;
+    border-radius: 4px;
 }
 /* Aksi Pembelian & Selektor Kuantitas */
 .owwc-product-actions-wrap {

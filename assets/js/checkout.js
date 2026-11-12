@@ -210,7 +210,9 @@ class OwwCommerceCheckout {
         if (!code) return;
 
         try {
-            const apiCoupon = (typeof owwcSettings !== 'undefined') ? `${owwcSettings.restUrl}owwc/v1/coupons/validate?code=${encodeURIComponent(code)}` : `/wp-json/owwc/v1/coupons/validate?code=${encodeURIComponent(code)}`;
+            const couponBase = (typeof owwcSettings !== 'undefined') ? `${owwcSettings.restUrl}owwc/v1/coupons/validate` : '/wp-json/owwc/v1/coupons/validate';
+            const sep = couponBase.includes('?') ? '&' : '?';
+            const apiCoupon = `${couponBase}${sep}code=${encodeURIComponent(code)}`;
             const res = await fetch(apiCoupon);
             const data = await res.json();
 

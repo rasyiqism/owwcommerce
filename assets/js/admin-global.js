@@ -117,4 +117,41 @@
             });
         }
     };
+
+    /**
+     * Escape HTML untuk mencegah XSS saat merender string dinamis di template literal.
+     * @param {string} str
+     * @returns {string}
+     */
+    window.owwcEscapeHTML = function(str) {
+        if (str === null || str === undefined) return '';
+        return String(str).replace(/[&<>'"]/g, tag => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            "'": '&#39;',
+            '"': '&quot;'
+        }[tag] || tag));
+    };
+
+    /**
+     * Membangun URL REST API WordPress secara aman (mendukung Plain ?rest_route= maupun Pretty /wp-json/).
+     * @param {string} endpoint - Path endpoint, misal 'owwc/v1/products'
+     * @param {Object} [params] - Query parameters opsional
+     * @returns {string}
+     */
+    window.owwcBuildRestUrl = function(endpoint, params = {}) {
+        const base = (typeof owwcSettings !== 'undefined' && owwcSettings.restUrl)
+            ? owwcSettings.restUrl
+            : '/wp-json/';
+        const cleanEndpoint = String(endpoint).replace(/^\/+/, '');
+        let url = base + cleanEndpoint;
+        const entries = Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== '');
+        if (entries.length > 0) {
+            const sep = url.includes('?') ? '&' : '?';
+            const qs = entries.map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&');
+            url += sep + qs;
+        }
+        return url;
+    };
 })();

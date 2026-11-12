@@ -1,12 +1,12 @@
 <?php
 namespace OwwCommerce\Shipping\Methods;
 
-use OwwCommerce\Shipping\ShippingMethod;
+use OwwCommerce\Shipping\AbstractShippingMethod;
 
 /**
  * Metode pengiriman Gratis Ongkir.
  */
-class FreeShipping implements ShippingMethod {
+class FreeShipping extends AbstractShippingMethod {
     
     private string $title;
     private float $min_amount;
@@ -32,11 +32,7 @@ class FreeShipping implements ShippingMethod {
 
     public function is_available( array $packages ): bool {
         if ( $this->min_amount > 0 ) {
-            $total = 0;
-            foreach ( $packages as $item ) {
-                $total += ( $item['price'] * $item['quantity'] );
-            }
-            return $total >= $this->min_amount;
+            return $this->calculate_packages_subtotal( $packages ) >= $this->min_amount;
         }
 
         return true;

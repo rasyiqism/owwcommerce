@@ -193,6 +193,9 @@ class OwwCommerceCart {
        EVENT BINDING
        ============================================================== */
     bindEvents() {
+        if (this.eventsBound) return;
+        this.eventsBound = true;
+
         document.body.addEventListener('click', async (e) => {
             // === Tombol "Tambah ke Keranjang" ===
             const addBtn = e.target.closest('.owwc-add-to-cart-btn');
@@ -206,10 +209,14 @@ class OwwCommerceCart {
                 const productId = addBtn.dataset.productId;
                 const variationId = parseInt(addBtn.dataset.variationId || 0, 10);
                 const qty = parseInt(addBtn.dataset.qty || 1, 10);
-                const origText = addBtn.querySelector('.btn-text') ? addBtn.querySelector('.btn-text').textContent : addBtn.textContent;
+                const btnTextEl = addBtn.querySelector('.btn-text');
+                const origContent = btnTextEl ? btnTextEl.textContent : addBtn.innerHTML;
 
-                const btnLabel = addBtn.querySelector('.btn-text') || addBtn;
-                btnLabel.textContent = 'Menambahkan...';
+                if (btnTextEl) {
+                    btnTextEl.textContent = 'Menambahkan...';
+                } else {
+                    addBtn.textContent = 'Menambahkan...';
+                }
                 addBtn.disabled = true;
 
                 // Tampilkan spinner jika ada
@@ -218,11 +225,19 @@ class OwwCommerceCart {
 
                 await this.addToCart(productId, qty, variationId);
 
-                addBtn.textContent = '✓ Ditambahkan';
+                if (btnTextEl) {
+                    btnTextEl.textContent = '✓ Ditambahkan';
+                } else {
+                    addBtn.textContent = '✓ Ditambahkan';
+                }
                 if (spinner) spinner.style.display = 'none';
 
                 setTimeout(() => {
-                    addBtn.textContent = origText;
+                    if (btnTextEl) {
+                        btnTextEl.textContent = origContent;
+                    } else {
+                        addBtn.innerHTML = origContent;
+                    }
                     addBtn.disabled = false;
                 }, 2000);
             }
